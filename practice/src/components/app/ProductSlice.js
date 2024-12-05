@@ -1,6 +1,7 @@
 import { createSlice } from "@reduxjs/toolkit";
+
 const initialState = {
-  products: [
+  products: JSON.parse(localStorage.getItem("products")) || [
     {
       id: 1,
       model: "iPhone 14",
@@ -258,68 +259,100 @@ const initialState = {
       copies: 41,
     },
   ],
-  selectedProducts: [],
+  selectedProducts: (() => {
+    try {
+      const stored = localStorage.getItem("selectedProducts");
+      if (stored) {
+        const parsed = JSON.parse(stored);
+        return Array.isArray(parsed) ? parsed : [];
+      }
+      return [];
+    } catch (e) {
+      console.error("Error parsing selected products:", e);
+      return [];
+    }
+  })(),
 };
 
-const productSlice = createSlice({
+export const productSlice = createSlice({
   name: "products",
   initialState,
   reducers: {
-    selectProduct: (state, action) => {
+    addSelectedProdects: (state, action) => {
       state.selectedProducts.push(action.payload);
-      const productIndex = state.products.findIndex((item) => {
-        return item.id === action.payload.id;
-      });
+      const productIndex = state.products.findIndex(
+        (item) => item.id === action.payload.id
+      );
       state.products[productIndex].status =
         !state.products[productIndex].status;
+      localStorage.setItem(
+        "selectedProducts",
+        JSON.stringify(state.selectedProducts)
+      );
     },
 
     selectedProductDelete: (state, action) => {
-      const SelectedProduct = state.selectedProducts.filter((item) => {
-        return item.id !== action.payload;
-      });
-
-      state.selectedProducts = SelectedProduct;
-      const productIndex = state.products.findIndex((item) => {
-        return item.id === action.payload;
-      });
+      state.selectedProducts = state.selectedProducts.filter(
+        (item) => item.id !== action.payload
+      );
+      const productIndex = state.products.findIndex(
+        (item) => item.id === action.payload
+      );
       state.products[productIndex].status =
         !state.products[productIndex].status;
+      localStorage.setItem(
+        "selectedProducts",
+        JSON.stringify(state.selectedProducts)
+      );
     },
 
     productQuantityIncrement: (state, action) => {
-      const productIndex = state.products.findIndex((item) => {
-        return item.id === action.payload;
-      });
+      const productIndex = state.products.findIndex(
+        (item) => item.id === action.payload
+      );
       state.products[productIndex].quantity++;
+      localStorage.setItem("products", JSON.stringify(state.products));
     },
+
     productQuantityDecrement: (state, action) => {
-      const productIndex = state.products.findIndex((item) => {
-        return item.id === action.payload;
-      });
+      const productIndex = state.products.findIndex(
+        (item) => item.id === action.payload
+      );
       state.products[productIndex].quantity--;
+      localStorage.setItem("products", JSON.stringify(state.products));
     },
-    selectedProductQunatityIncrement: (state, action) => {
-      const productIndex = state.selectedProducts.findIndex((item) => {
-        return item.id === action.payload;
-      });
+
+    selectedProductQuantityIncrement: (state, action) => {
+      const productIndex = state.selectedProducts.findIndex(
+        (item) => item.id === action.payload
+      );
       state.selectedProducts[productIndex].quantity++;
+      localStorage.setItem(
+        "selectedProducts",
+        JSON.stringify(state.selectedProducts)
+      );
     },
+
     selectedProductQuantityDecrement: (state, action) => {
-      const productIndex = state.selectedProducts.findIndex((item) => {
-        return item.id === action.payload;
-      });
+      const productIndex = state.selectedProducts.findIndex(
+        (item) => item.id === action.payload
+      );
       state.selectedProducts[productIndex].quantity--;
+      localStorage.setItem(
+        "selectedProducts",
+        JSON.stringify(state.selectedProducts)
+      );
     },
   },
 });
 
-export default productSlice.reducer;
 export const {
-  selectProduct,
+  addSelectedProdects,
   selectedProductDelete,
   productQuantityIncrement,
   productQuantityDecrement,
-  selectedProductQunatityIncrement,
+  selectedProductQuantityIncrement,
   selectedProductQuantityDecrement,
 } = productSlice.actions;
+
+export default productSlice.reducer;

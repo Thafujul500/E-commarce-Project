@@ -1,29 +1,48 @@
 import React from "react";
 import { useDispatch, useSelector } from "react-redux";
 import {
+  addSelectedProdects,
   productQuantityDecrement,
   productQuantityIncrement,
   selectedProductDelete,
   selectedProductQuantityDecrement,
-  selectedProductQunatityIncrement,
-  selectProduct,
-} from "../app/ProductSlice";
+  selectedProductQuantityIncrement,
+} from "./../app/ProductSlice";
+import Swal from "sweetalert2";
 
 const Home = () => {
   const productsList = useSelector((state) => state.product.products);
+  console.log(productsList);
+
   const selectedProducts = useSelector(
     (state) => state.product.selectedProducts
   );
+  console.log(selectedProducts);
 
   const dispatch = useDispatch();
   // add selected oroduct
   const handleSelectProductClick = (receivedItem) => {
-    dispatch(selectProduct(receivedItem));
+    dispatch(addSelectedProdects(receivedItem));
   };
   // delete selected poroduct
   const handleSelectedProductCancelClick = (id) => {
-    dispatch(selectedProductDelete(id));
+    Swal.fire({
+      title: "Are you sure?",
+      text: "Do you really want to delete this product? This action cannot be undone.",
+      icon: "warning",
+      showCancelButton: true,
+      confirmButtonText: "Yes, delete it!",
+      cancelButtonText: "No, cancel!",
+    }).then((result) => {
+      if (result.isConfirmed) {
+        dispatch(selectedProductDelete(id));
+        Swal.fire("Deleted!", "The product has been deleted.", "success");
+      } else if (result.dismiss === Swal.DismissReason.cancel) {
+        Swal.fire("Cancelled", "The product is safe :)", "error");
+      }
+    });
   };
+
   // increase quantity of poroduct
   const handleQuantityIncrementClick = (id) => {
     dispatch(productQuantityIncrement(id));
@@ -34,19 +53,33 @@ const Home = () => {
   };
   // increase quantity of selected poroduct
   const handleSelectedProductQuantityIncrementClick = (id) => {
-    dispatch(selectedProductQunatityIncrement(id));
+    dispatch(selectedProductQuantityIncrement(id));
   };
   // decrease quantity of selected poroduct
   const handleSelectedProductQuantityDecrement = (id) => {
     dispatch(selectedProductQuantityDecrement(id));
   };
-  // calculation of quantity of selected total price
-  const totalPrice = selectedProducts.reduce((total, item) => {
-    return total + item.quantity * item.price;
+
+  const totalPrice = (selectedProducts || []).reduce((total, item) => {
+    if (
+      item &&
+      typeof item === "object" &&
+      item.quantity >= 0 &&
+      item.price >= 0
+    ) {
+      const quantity = item.quantity || 0;
+      const price = item.price || 0;
+      return total + quantity * price;
+    }
+    return total;
   }, 0);
-  // calculation of quantity of selected total products
-  const numberOfProduct = selectedProducts.reduce((number, item) => {
-    return number + item.quantity;
+
+  const numberOfProduct = (selectedProducts || []).reduce((number, item) => {
+    if (item && typeof item === "object" && item.quantity >= 0) {
+      const quantity = item.quantity || 0;
+      return number + quantity;
+    }
+    return number;
   }, 0);
 
   return (
@@ -164,15 +197,16 @@ const Home = () => {
                       aria-label="Basic mixed styles example"
                     >
                       <button
-                        onClick={() =>
-                          handleSelectedProductQuantityIncrementClick(item.id)
-                        }
+                        onClick={() => {
+                          handleSelectedProductQuantityIncrementClick(item.id);
+                        }}
                         type="button"
                         className="btn btn-info fw-bold"
                         disabled={item.quantity >= item.copies}
                       >
                         +
                       </button>
+
                       <button
                         onClick={() =>
                           handleSelectedProductCancelClick(item.id)
